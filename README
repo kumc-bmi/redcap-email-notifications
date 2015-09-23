@@ -1,5 +1,14 @@
-While the email notification code is not strictly a REDCap plugin, I feel putting this code here make sense since it may end up using a fair share of what ends up becoming our generalizable REDCap plugin infrastructure (e.g. the model in the MVC pattern that has yet to have it's wrinkles ironed out). 
+While the email notification code is not strictly a REDCap plugin, I do feel
+that putting this code here make sense, since it may end up using a significant
+amount of what ends up becoming our generalizable REDCap plugin infrastructure 
+(e.g. the model in the MVC pattern that has yet to have it's wrinkles ironed out
+, as well as potentially the Twig template engine for structuring email content
+). 
 
-For now, to just get things up a running, I've copied the records.php from the repower-redcap-plugin repo for data access.  records.php should be refactored into collection of objects (e.g. Record, DAG, etc.) which possibly inherit from a PluginModel class which handles all of the REDCap API functionality.
+For now, to just get things up a running, I've copied the records.php from the
+repower-redcap-plugin repo for data access.  records.php should be refactored 
+into a collection of objects (e.g. Record, DAG, etc.) which possibly inherit 
+from a PluginModel class which handles all of the REDCap API functionality.
 
-This PluginModel, along with PluginController, PluginConfig, etc. can then be moved out of specific plugin repo into their own repo.
+This PluginModel, along with PluginController, PluginConfig, etc. can then be 
+refactored out of specific plugin repos into its own repo.

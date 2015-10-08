@@ -3,20 +3,15 @@
  * This is a prototype implementation of the redcap_save_record hook which send
  * email notifications ...
  */
-
-
 function notifications_save_record($project_id, $record, $instrument, $event_id,
                                    $group_id, $survey_hash, $response_id)
 {
-    define('PLUGIN_ROOT', realpath(REDCAP_ROOT.'plugins/'));
-    
     // Provides access to REDCap helper functions and database connection.
     global $conn; // REDCapism
     require_once(REDCAP_ROOT.'redcap_connect.php');
 
     // Load configuration...
-    // TODO: PluginConfig needs to be localized or generalized.
-    require_once(PLUGIN_ROOT.'/repower/utils/PluginConfig.php');
+    require_once(dirname(__FILE__).'/utils/PluginConfig.php');
     $CONFIG = new PluginConfig(dirname(__FILE__).'/notifications.ini');
 
     // This differs from REDCap's Record in that project records can be queried 

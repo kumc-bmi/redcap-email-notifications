@@ -16,7 +16,7 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 
     // This differs from REDCap's Record in that project records can be queried 
     // for by fields other than record id.
-    require_once('records.php');
+    require_once(dirname(__FILE__).'/utils/records.php');
     
     // Get notifications associated with the given project.
     $notifications = get_records_by(

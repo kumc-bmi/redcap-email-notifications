@@ -103,7 +103,7 @@ function get_records_by($field_name, $value, $pid, $conn) {
 }
 
 function save_redcap_data($redcap_url, $api_token, $data) {
-    require_once(dirname(__FILE__).'/utils/RestCallRequest.php');
+    require_once(dirname(__FILE__).'/RestCallRequest.php');
 
     $api_request = new RestCallRequest(
         $redcap_url,

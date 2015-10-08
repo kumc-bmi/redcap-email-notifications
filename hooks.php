@@ -19,8 +19,8 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     require_once(PLUGIN_ROOT.'/repower/utils/PluginConfig.php');
     $CONFIG = new PluginConfig(dirname(__FILE__).'/config.ini');
 
-    // This differs from REDCap's Record in that project records can be query 
-    // for fields other than record id.
+    // This differs from REDCap's Record in that project records can be queried 
+    // for by fields other than record id.
     require_once('records.php');
     
     // Get notifications associated with the given project.
@@ -40,8 +40,6 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     require_once(APP_PATH_DOCROOT.'Classes/Records.php');
     // Provides Event based helper functions.
     require_once(APP_PATH_DOCROOT.'Classes/Event.php');
-    // Provides retrival of field values from record using REDCap's pipe syntax.
-    require_once(APP_PATH_DOCROOT.'Classes/Piping.php');
 
     // Get and format submitted record data.
     $raw_data = Records::getData('array', $record);
@@ -52,25 +50,32 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     foreach($notifications as $notification) {
 
         // Prepare notification logic.
-        $logic = prepare_logic($notification['logic']);
+        $logic = prepare_logic($notification['logic'], $event_id);
 
         // Does the given record meet notification logic conditions.
         if(LogicTester::isValid($logic)) {
             if(LogicTester::apply($logic, $event_data)) {
                 // Is a trigger field being used?
                 if($notification['trigger_field']) {
+                    $trigger_field = get_field_value(
+                        $notification['trigger_field'],
+                        $record,
+                        $event_id,
+                        $raw_data
+                    );
                     // If the trigger field is blank or 'Yes' send notification
-                    if($record_data[$notification['trigger_field']] !== '0') {
+                    if($trigger_field !== 'No') {
                         reset_trigger_field(
                             $record,
+                            $event_id,
                             $notification['trigger_field'],
                             $CONFIG['api_url'],
                             $notification['project_token']
                         );
-                        send_notification($notification, $record_data);
+                        send_notification($notification, $record, $event_id, $raw_data);
                     }
                 } else { // No trigger field declared...
-                    send_notification($notification, $record_data);
+                    send_notification($notification, $record, $event_id, $raw_data);
                 }
             }
         } else {
@@ -89,26 +94,42 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 /**
  * Helper functions for notifications_save_record
  */
-function get_field_value($label, $record, $event_id, $raw_data) {
+function get_field_value($label, $record, $event_id, $record_data) {
+    // Provides retrival of field values from record using REDCap's pipe syntax.
+    require_once(APP_PATH_DOCROOT.'Classes/Piping.php');
+    
     // If field name is not flanked by blackets, add them.
     if(substr($label, 0, 1) != '[' or substr($label, -1) != ']') {
-        $label = '['.$label.']';
+        $label = parameterize($label);
     }
 
-    return Piping::replaceVariablesInLabel(
+    return  Piping::replaceVariablesInLabel(
         $label,
         $record,
         $event_id,
-        $raw_data,
+        $record_data,
         true,
-        $project_id,
+        null,
         false
     );
 }
 
-function prepare_logic($logic) {
+function replace_labels_with_values($text, $record, $event_id, $record_data) {
+    preg_match_all('/\[.*]/U', $text, $matches);
+    $matches = array_unique($matches);
+    foreach($matches[0] as $match) {
+        $text = str_replace(
+            $match, 
+            get_field_value($match, $record, $event_id, $record_data),
+            $text
+        ); 
+    }
+    return $text;
+}
+
+function prepare_logic($logic, $event_id) {
     if(REDCap::isLongitudinal()) {
-        // Returns event eames for the globally specified project
+        // Returns event eames for the globally specified project :`(
         $event_names = REDCap::getEventNames(true);
         // If longitudinal, prepent event name
         $logic = LogicTester::logicPrependEventName(
@@ -133,12 +154,17 @@ function parameterize($fieldname) {
     return '['.$fieldname.']';
 }
 
-function reset_trigger_field($record, $trigger_field, $api_url, $api_token) {
+function reset_trigger_field($record, $event_id, $trigger_field, $api_url, $api_token) {
     $trigger_reset = array(array(
         'record' => $record,
         'field_name' => $trigger_field,
         'value' => 0
     ));
+
+    if(REDCap::isLongitudinal()) {
+        $event_names = REDCap::getEventNames(true);
+        $trigger_reset[0]['redcap_event_name'] = $event_names[$event_id];
+    }
 
     list($success, $error_msg) = save_redcap_data(
         $api_url,
@@ -147,36 +173,51 @@ function reset_trigger_field($record, $trigger_field, $api_url, $api_token) {
     );
 
     if(!$success) {
-        error_log('Failed to reset sent notification flag.');
+        error_log('Failed to reset notification trigger field: '.$error_msg);
         return false;
     }
 
     return true;
 }
 
-function send_notification($notification, $record_data) {
-    print_r($notification);
+function send_notification($notification, $record, $event_id, $record_data) {
     if($notification['to_address_type'] == 'static') {
         $to = $notification['static_to_address'];
     } else {
-        $to = $record_data[$notification['to_address_field']];
+        $to = get_field_value(
+            $notification['to_address_field'],
+            $record,
+            $event_id,
+            $record_data
+        );
     }
 
     if($notification['from_address_type'] == 'static') {
         $from = $notification['static_from_address'];
     } else {
-        $from = $record_data[$notification['from_address_field']];
+        $from = get_field_value(
+            $notification['from_address_field'],
+            $record,
+            $event_id,
+            $record_data
+        );
     }
 
-    // Prepare record fields and values for use...
-    list($fields, $values) = prepare_fields_and_values($record_data);
+    $subject = replace_labels_with_values(
+        $notification['subject'],
+        $record,
+        $event_id,
+        $record_data
+    );
 
-    if(REDCap::email(
-        $to,
-        $from,
-        str_replace($fields, $values, $notification['subject']),
-        str_replace($fields, $values, $notification['body'])
-    )) {
+    $body = replace_labels_with_values(
+        $notification['body'],
+        $record,
+        $event_id,
+        $record_data
+    );
+
+    if(REDCap::email($to, $from, $subject, $body)) {
         return true;
     } else {
         error_log('Failed to send email notification ...');

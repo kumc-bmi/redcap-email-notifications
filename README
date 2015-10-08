@@ -13,9 +13,3 @@ from a PluginModel class which handles all of the REDCap API functionality.
 This PluginModel, along with PluginController, PluginConfig, etc. can then be 
 refactored out of specific plugin repos into its own repo.
 
-/*                    $trigger_field = get_field_value(
-                        $notification['trigger_field'],
-                        $record,
-                        $event_id,
-                        $raw_data
-                    );*/

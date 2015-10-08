@@ -17,7 +17,7 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     // Load configuration...
     // TODO: PluginConfig needs to be localized or generalized.
     require_once(PLUGIN_ROOT.'/repower/utils/PluginConfig.php');
-    $CONFIG = new PluginConfig(dirname(__FILE__).'/config.ini');
+    $CONFIG = new PluginConfig(dirname(__FILE__).'/notifications.ini');
 
     // This differs from REDCap's Record in that project records can be queried 
     // for by fields other than record id.
@@ -42,9 +42,7 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     require_once(APP_PATH_DOCROOT.'Classes/Event.php');
 
     // Get and format submitted record data.
-    $raw_data = Records::getData('array', $record);
-    $event_data = $raw_data[$record]; // Should be record
-    $record_data = $event_data[$event_id]; // Should be event ... or field_data
+    $record_data = Records::getData('array', $record);
 
     // Iterate over associated notifications.
     foreach($notifications as $notification) {
@@ -54,14 +52,14 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 
         // Does the given record meet notification logic conditions.
         if(LogicTester::isValid($logic)) {
-            if(LogicTester::apply($logic, $event_data)) {
+            if(LogicTester::apply($logic, $record_data[$record])) {
                 // Is a trigger field being used?
                 if($notification['trigger_field']) {
                     $trigger_field = get_field_value(
                         $notification['trigger_field'],
                         $record,
                         $event_id,
-                        $raw_data
+                        $record_data
                     );
                     // If the trigger field is blank or 'Yes' send notification
                     if($trigger_field !== 'No') {
@@ -72,10 +70,20 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
                             $CONFIG['api_url'],
                             $notification['project_token']
                         );
-                        send_notification($notification, $record, $event_id, $raw_data);
+                        send_notification(
+                            $notification,
+                            $record,
+                            $event_id,
+                            $record_data
+                        );
                     }
                 } else { // No trigger field declared...
-                    send_notification($notification, $record, $event_id, $raw_data);
+                    send_notification(
+                        $notification,
+                        $record,
+                        $event_id,
+                        $record_data
+                    );
                 }
             }
         } else {

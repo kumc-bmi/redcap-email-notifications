@@ -1,7 +1,8 @@
 <?php
 /**
- * This is a prototype implementation of the redcap_save_record hook which send
- * email notifications ...
+ * This is an implementation of the redcap_save_record hook which sends
+ * preconfigured email notifications when an associated REDCap record is save,
+ * and trigger conditions are meet.
  */
 function notifications_save_record($project_id, $record, $instrument, $event_id,
                                    $group_id, $survey_hash, $response_id)
@@ -10,12 +11,12 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     global $conn; // REDCapism
     require_once(REDCAP_ROOT.'redcap_connect.php');
 
-    // Load configuration...
+    // Load configuration plugin configuration.
     require_once(dirname(__FILE__).'/utils/PluginConfig.php');
     $CONFIG = new PluginConfig(dirname(__FILE__).'/notifications.ini');
 
-    // This differs from REDCap's Record in that project records can be queried 
-    // for by fields other than record id.
+    // This differs from REDCap's Record class in that project records can be
+    // queried for by fields other than record id.
     require_once(dirname(__FILE__).'/utils/records.php');
     
     // Get notifications associated with the given project.
@@ -33,8 +34,6 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     require_once(APP_PATH_DOCROOT.'Classes/LogicTester.php');
     // Provides properly formated REDCap record data for use with LogicTester.
     require_once(APP_PATH_DOCROOT.'Classes/Records.php');
-    // Provides Event based helper functions.
-    require_once(APP_PATH_DOCROOT.'Classes/Event.php');
 
     // Get and format submitted record data.
     $record_data = Records::getData('array', $record);
@@ -94,8 +93,14 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     }
 }
 
+
 /**
- * Helper functions for notifications_save_record
+ * Given a field name or REDCap piping label, get the respective record value.
+ *
+ * Examples:
+ *   field_name
+ *   [field_name]
+ *   [event_name][field_name]
  */
 function get_field_value($label, $record, $event_id, $record_data) {
     // Provides retrival of field values from record using REDCap's pipe syntax.
@@ -103,7 +108,7 @@ function get_field_value($label, $record, $event_id, $record_data) {
     
     // If field name is not flanked by blackets, add them.
     if(substr($label, 0, 1) != '[' or substr($label, -1) != ']') {
-        $label = parameterize($label);
+        $label = '['.$label.']';
     }
 
     return  Piping::replaceVariablesInLabel(
@@ -117,6 +122,11 @@ function get_field_value($label, $record, $event_id, $record_data) {
     );
 }
 
+
+/**
+ * Give a string containing REDCap piping syntax, and relevant record data,
+ * replace field references with the relavent record value.
+ */
 function replace_labels_with_values($text, $record, $event_id, $record_data) {
     preg_match_all('/\[.*]/U', $text, $matches);
     $matches = array_unique($matches);
@@ -130,8 +140,16 @@ function replace_labels_with_values($text, $record, $event_id, $record_data) {
     return $text;
 }
 
+
+/**
+ * Makes sure that logic contains relevant event prefixes, if project is
+ * longitudinal.
+ */
 function prepare_logic($logic, $event_id) {
     if(REDCap::isLongitudinal()) {
+        // Provides Event based helper functions.
+        require_once(APP_PATH_DOCROOT.'Classes/Event.php');
+
         // Returns event eames for the globally specified project :`(
         $event_names = REDCap::getEventNames(true);
         // If longitudinal, prepent event name
@@ -143,21 +161,13 @@ function prepare_logic($logic, $event_id) {
     return $logic;
 }
 
-function prepare_fields_and_values($record_data) {
-    $fields = array_keys($record_data);
-    $fields = array_map(
-        parameterize,
-        $fields
-    );
-    $values = array_values($record_data);
-    return array($fields, $values);
-}
 
-function parameterize($fieldname) {
-    return '['.$fieldname.']';
-}
-
-function reset_trigger_field($record, $event_id, $trigger_field, $api_url, $api_token) {
+/**
+ * "Reset" a specified trigger field to "No".
+ */
+function reset_trigger_field($record, $event_id, $trigger_field, $api_url,
+                             $api_token)
+{
     $trigger_reset = array(array(
         'record' => $record,
         'field_name' => $trigger_field,
@@ -165,6 +175,9 @@ function reset_trigger_field($record, $event_id, $trigger_field, $api_url, $api_
     ));
 
     if(REDCap::isLongitudinal()) {
+        // Provides Event based helper functions.
+        require_once(APP_PATH_DOCROOT.'Classes/Event.php');
+
         $event_names = REDCap::getEventNames(true);
         $trigger_reset[0]['redcap_event_name'] = $event_names[$event_id];
     }
@@ -183,6 +196,10 @@ function reset_trigger_field($record, $event_id, $trigger_field, $api_url, $api_
     return true;
 }
 
+
+/**
+ * Format and send an email notification.
+ */
 function send_notification($notification, $record, $event_id, $record_data) {
     if($notification['to_address_type'] == 'static') {
         $to = $notification['static_to_address'];

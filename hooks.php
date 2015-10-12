@@ -128,7 +128,8 @@ function get_field_value($label, $record, $event_id, $record_data) {
  * replace field references with the relavent record value.
  */
 function replace_labels_with_values($text, $record, $event_id, $record_data) {
-    preg_match_all('/\[.*]/U', $text, $matches);
+    $pattern = '\[[0-9a-z_]*]\[[0-9a-z_]*]|\[[0-9a-z_]*]';
+    preg_match_all('/'.$pattern.'/U', $text, $matches);
     $matches = array_unique($matches);
     foreach($matches[0] as $match) {
         $text = str_replace(

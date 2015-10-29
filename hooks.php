@@ -41,29 +41,40 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     // Iterate over associated notifications.
     foreach($notifications as $notification) {
 
-        // Prepare notification logic.
-        $logic = prepare_logic($notification['logic'], $event_id);
+        // Continue only if notification record is marked as "complete".
+        if($notification['notifications_complete'] == 2) {
 
-        // Does the given record meet notification logic conditions.
-        if(LogicTester::isValid($logic)) {
-            if(LogicTester::apply($logic, $record_data[$record])) {
-                // Is a trigger field being used?
-                if($notification['trigger_field']) {
-                    $trigger_field = get_field_value(
-                        $notification['trigger_field'],
-                        $record,
-                        $event_id,
-                        $record_data
-                    );
-                    // If the trigger field is blank or 'Yes' send notification
-                    if($trigger_field !== 'No') {
-                        reset_trigger_field(
+            // Prepare notification logic.
+            $logic = prepare_logic($notification['logic'], $event_id);
+
+            // Does the given record meet notification logic conditions.
+            if(LogicTester::isValid($logic)) {
+                if(LogicTester::apply($logic, $record_data[$record])) {
+                    // Is a trigger field being used?
+                    if($notification['trigger_field']) {
+                        $trigger_field = get_field_value(
+                            $notification['trigger_field'],
                             $record,
                             $event_id,
-                            $notification['trigger_field'],
-                            $CONFIG['api_url'],
-                            $notification['project_token']
+                            $record_data
                         );
+                        // If the trigger field is blank or Yes send notification
+                        if($trigger_field !== 'No') {
+                            reset_trigger_field(
+                                $record,
+                                $event_id,
+                                $notification['trigger_field'],
+                                $CONFIG['api_url'],
+                                $notification['project_token']
+                            );
+                            send_notification(
+                                $notification,
+                                $record,
+                                $event_id,
+                                $record_data
+                            );
+                        }
+                    } else { // No trigger field declared...
                         send_notification(
                             $notification,
                             $record,
@@ -71,24 +82,17 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
                             $record_data
                         );
                     }
-                } else { // No trigger field declared...
-                    send_notification(
-                        $notification,
-                        $record,
-                        $event_id,
-                        $record_data
-                    );
                 }
+            } else {
+                // Log that notification logic is invalid.
+                error_log(
+                    'Invalid notification logic in notification defined by '
+                    .'(pid:'.$CONFIG['notifications_pid'].'; '
+                    .'rid:'.$notification['record_id'].') '
+                    .'originating from action on '
+                    .'(pid:'.$project_id.'; rid:'.$record.')'
+                );
             }
-        } else {
-            // Log that notification logic is invalid.
-            error_log(
-                'Invalid notification logic in notification defined by '
-                .'(pid:'.$CONFIG['notifications_pid'].'; '
-                .'rid:'.$notification['record_id'].') '
-                .'originating from action on '
-                .'(pid:'.$project_id.'; rid:'.$record.')'
-            );
         }
     }
 }

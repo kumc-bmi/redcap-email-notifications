@@ -1,15 +1,5 @@
 # REDCap Notifications Plugin
 
- * Copyright
- * Introduction
- * Requirements
- * Installation
- * Configuration
- * Testing
- * Validation
- * Maintainers
-
-
 ### INTRODUCTION
 While the email notification code is not strictly a REDCap plugin, the code was
 structured as such, since it may end up using a significant amount of what ends
@@ -18,7 +8,6 @@ the REQUIREMENTS section).
 
 This code enables email notifications to be associate with REDCap projects, and
 sent under conditions set in a dedicated notifications REDCap project.  
-
 
 ### REQUIREMENTS
 This code requires that the REDCap Hook Registry code be installed.  The hook
@@ -48,7 +37,6 @@ utils directory and is the following:
                         their API, and distributed on the REDCap Consortium site
                         (http://project-redcap.org).
 
-
 ### INSTALLATION
 To install this code:
  1. Clone the notification plugin code into <redcap-root>/plugins/notifications
@@ -56,14 +44,12 @@ To install this code:
  2. Create a new REDCap project for managing notifications, and upload the 
     data_dictionary.csv file in this directory.
 
-
 ### CONFIGURATION
 The notification plugin configuration can be found in notifications.ini:
  * notification_pid: The project id of the notification management project
                      created during installation.
  * api_url: The URL to the local REDCap installation's API
             (e.g. http://redcap.kumc.edu/api/).
-
 
 ### MAINTAINERS
 Current maintainers:

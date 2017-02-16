@@ -21,34 +21,33 @@ the aggregation of common functionality into a generalizable REDCap plugin/hook
 infrastructure.  The code that lends itself to this has been placed into the 
 utils directory and is the following:
 
- * records.php: This code was originally developed for the RE-POWER counseling
+ * `records.php`: This code was originally developed for the RE-POWER counseling
                 form plugin in order to interact with the REDCap database.  That
                 code has evolved into a simple MVC pattern, and the plan is to 
                 pull all generalizable code out into a separate "plugin 
                 framework".  The model in the MVC pattern has yet to be fully 
-                fleshed out, so functionality provided by records.php is
+                fleshed out, so functionality provided by `records.php` is
                 evolving. 
 
- * PluginConfig.php: This contains a class definition for an immutable object,
+ * `PluginConfig.php`: This contains a class definition for an immutable object,
                      which implements the PHP array interface and contains
                      configuration option pulled in from an ini file.
 
- * RestCallRequest.php: This code was written by REDCap developer for use with
+ * `RestCallRequest.php`: This code was written by REDCap developer for use with
                         their API, and distributed on the REDCap Consortium site
                         (http://project-redcap.org).
 
 ### INSTALLATION
 To install this code:
- 1. Clone the notification plugin code into <redcap-root>/plugins/notifications
-    (remote repository can be found in ticket #3322).
+ 1. Clone the notification plugin code into `<redcap-root>/plugins/notifications`.
  2. Create a new REDCap project for managing notifications, and upload the 
-    data_dictionary.csv file in this directory.
+    `data_dictionary.csv` file in this directory.
 
 ### CONFIGURATION
-The notification plugin configuration can be found in notifications.ini:
- * notification_pid: The project id of the notification management project
+The notification plugin configuration can be found in `notifications.ini`:
+ * `notification_pid`: The project id of the notification management project
                      created during installation.
- * api_url: The URL to the local REDCap installation's API
+ * `api_url`: The URL to the local REDCap installation's API
             (e.g. http://redcap.kumc.edu/api/).
 
 ### MAINTAINERS

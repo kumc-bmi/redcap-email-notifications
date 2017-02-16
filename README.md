@@ -65,7 +65,6 @@ The notification plugin configuration can be found in notifications.ini:
             (e.g. http://redcap.kumc.edu/api/).
 
 
-## MAINTAINERS
------------
+### MAINTAINERS
 Current maintainers:
  * Michael Prittie <mprittie@kumc.edu>

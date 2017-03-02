@@ -72,10 +72,25 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
             if(LogicTester::isValid($logic)) {
                 if(LogicTester::apply($logic, $record_data[$record])) {
                     // Is a trigger field being used?
-                  if($notification['is_survey_link']== 'yes'){
-                  
-                         $notification['survey_link']= generate_survey_link($notification['project_token'],$notification['survey_instrument'],$record,$conn);
-                         error_log("Here is the survey_link");
+                  if($notification['is_survey_link']== 'yes'){ 
+                        
+                        error_log("before adding link to survey_link variable");
+                        error_log($notification['survey_link']);                 
+
+                        $notification['survey_link']= generate_survey_link($notification['project_token'],$notification['survey_instrument'],$record,$conn);
+                        // error_log("Here is the survey_link");
+                        // error_log($notification['survey_link']);
+                        
+                         $api_url='http://bmidev1.kumc.edu/redcap/api/';
+                         $api_token = $notification['project_token'];
+
+                         list($success, $error_msg) = save_redcap_data(
+                                                        $api_url,
+                                                        $api_token,
+                                                        $notification['survey_link']
+                                                        );
+
+                         error_log("notifications after adding link");
                          error_log($notification['survey_link']);
                    }
 
@@ -143,10 +158,7 @@ function generate_survey_link($token,$instrument,$record,$conn){
     error_log("record");
     error_log(print_r($record, TRUE));
 
-   // $base_api_url= $CONFIG['api_url'];
-    $base_api_url = 'http://bmidev1.kumc.edu/redcap/api/';
-    error_log($base_api_url);
-
+    $base_api_url='http://bmidev1.kumc.edu/redcap/api/';
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $base_api_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
@@ -171,10 +183,9 @@ function generate_survey_link($token,$instrument,$record,$conn){
 
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
     $output = curl_exec($ch);
-    curl_close($ch);
     
-   error_log("link to survey before returning");
-   error_log($output);
+    error_log("link to survey before returning");
+    error_log($output);
 
     //print sprintf("\t %s",$output);
     //print "\n INFO: get_survery_link \n";

@@ -14,6 +14,13 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     // Provides access to REDCap helper functions and database connection.
     print "hello";
     error_log("hello");
+    error_log("project id");
+    error_log($project_id);
+    error_log("instrument");
+    error_log($instrument);
+    error_log("record");
+    error_log($record);
+
     global $conn; // REDCapism
     require_once(REDCAP_ROOT.'redcap_connect.php');
 
@@ -33,6 +40,9 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
         $CONFIG['notifications_pid'],
         $conn
     );
+    error_log("notifications object has");
+    error_log(print_r($notifications, TRUE));
+
 
     // Return if no notifications found
     if(empty($notifications)) { return; }
@@ -44,6 +54,10 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 
     // Get and format submitted record data.
     $record_data = Records::getData('array', $record);
+    error_log("record_data object has");
+    error_log($record_data);
+    error_log("Inside record_data");
+    error_log(print_r($record_data, TRUE));
 
     // Iterate over associated notifications.
     foreach($notifications as $notification) {
@@ -58,6 +72,13 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
             if(LogicTester::isValid($logic)) {
                 if(LogicTester::apply($logic, $record_data[$record])) {
                     // Is a trigger field being used?
+                  if($notification['is_survey_link']== 'yes'){
+                  
+                         $notification['survey_link']= generate_survey_link($notification['project_token'],$notification['survey_instrument'],$record,$conn);
+                         error_log("Here is the survey_link");
+                         error_log($notification['survey_link']);
+                   }
+
                     if($notification['trigger_field']) {
                         $trigger_field = get_field_value(
                             $notification['trigger_field'],
@@ -103,7 +124,64 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
         }
     }
 }
+//Function to generate survey links
 
+function generate_survey_link($token,$instrument,$record,$conn){
+    /**
+    Input:
+            token:        string : It is API tBased on token, it will find out pid
+            instrument:   string
+            record:       string
+    Output:
+            url           string
+    **/
+    error_log("Inside Generate survey link function");
+    error_log("token value");
+    error_log($token);
+    error_log("instrument");
+    error_log($instrument);
+    error_log("record");
+    error_log(print_r($record, TRUE));
+
+   // $base_api_url= $CONFIG['api_url'];
+    $base_api_url = 'http://bmidev1.kumc.edu/redcap/api/';
+    error_log($base_api_url);
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $base_api_url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_VERBOSE, 0);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+    curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+    curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+    //print "\n DEBUG: get_survery_link \n";
+
+    $data = array(
+    'token' => $token,
+    'content' => 'surveyLink',
+    'format' => 'json',
+    'instrument' => $instrument,
+    'event' => '',
+    'record' => $record,
+    'returnFormat' => 'json'
+    );
+
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
+    $output = curl_exec($ch);
+    curl_close($ch);
+    
+   error_log("link to survey before returning");
+   error_log($output);
+
+    //print sprintf("\t %s",$output);
+    //print "\n INFO: get_survery_link \n";
+    return $output;
+    
+
+}
 
 /**
  * Given a field name or REDCap piping label, get the respective record value.

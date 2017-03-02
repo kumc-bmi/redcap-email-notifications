@@ -12,6 +12,8 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
                                    $group_id, $survey_hash, $response_id)
 {
     // Provides access to REDCap helper functions and database connection.
+    print "hello";
+    error_log("hello");
     global $conn; // REDCapism
     require_once(REDCAP_ROOT.'redcap_connect.php');
 

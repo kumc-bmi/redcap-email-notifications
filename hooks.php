@@ -73,8 +73,8 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
                 if(LogicTester::apply($logic, $record_data[$record])) {
                     // Is a trigger field being used?
                   if($notification['is_survey_link']== 'yes'){                  
-
-                        $s_link = generate_survey_link($notification['project_token'],$notification['survey_instrument'],$record,$conn);
+                        error_log("What is happening?");
+                        $s_link = generate_survey_link($notification['project_token'],$notification['survey_instrument'],$record,$CONFIG);
                         error_log("notifications after adding link");
                         error_log($s_link);
                         error_log("here is the record field where the link should be saved");
@@ -129,7 +129,10 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 }
 //Function to generate survey links
 
-function generate_survey_link($token,$instrument,$record,$conn){
+function generate_survey_link($token,$instrument,$record,$CONFIG){
+
+   require_once(dirname(__FILE__).'/utils/RestCallRequest.php');
+
     /**
     Input:
             token:        string : It is API tBased on token, it will find out pid
@@ -138,6 +141,7 @@ function generate_survey_link($token,$instrument,$record,$conn){
     Output:
             url           string
     **/
+    error_log("using api***********************************************************");
     error_log("Inside Generate survey link function");
     error_log("token value");
     error_log($token);
@@ -146,17 +150,19 @@ function generate_survey_link($token,$instrument,$record,$conn){
     error_log("record");
     error_log(print_r($record, TRUE));
 
-    $base_api_url='http://bmidev1.kumc.edu/redcap/api/';
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $base_api_url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_VERBOSE, 0);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-    curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-    curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+//    require_once(dirname(__FILE__).'/RestCallRequest.php');
+
+   // $base_api_url='http://bmidev1.kumc.edu/redcap/api/';
+   // $ch = curl_init();
+   // curl_setopt($ch, CURLOPT_URL, $base_api_url);
+   // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
+   // curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+   // curl_setopt($ch, CURLOPT_VERBOSE, 0);
+   // curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+   // curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+   // curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+   // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+   // curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
     //print "\n DEBUG: get_survery_link \n";
 
     $data = array(
@@ -168,16 +174,44 @@ function generate_survey_link($token,$instrument,$record,$conn){
     'record' => $record,
     'returnFormat' => 'json'
     );
-
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
-    $output = curl_exec($ch);
     
-    error_log("link to survey before returning");
-    error_log($output);
+   $api_request = new RestCallRequest(
+        $CONFIG['api_url'],
+        'POST',
+        array(
+            'content'   => 'record',
+            'type'      => 'eav',
+            'format'    => 'json',
+            'token'     => $token,
+            'data'      => json_encode($data)
+        )
+    );
+
+    $api_request->execute();
+    $response_info = $api_request->getResponseInfo();
+    $error_msg = '';
+    if($response_info['http_code'] == 200) {
+        $api_response = json_decode($api_request->getResponseBody(), true);
+        print_r($api_response, TRUE);
+        $output = $api_response;
+        error_log(print_r($output, TRUE));
+        error_log("link to survey from api_post above");
+        return $output;
+    } else {
+        $error_msg = (isset($api_response['error']) ? $api_response['error'] : 'No error returned.');
+        return array(false, $error_msg);
+    }
+   
+    
+    //curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
+   // $output = curl_exec($ch);
+    
+    //error_log("link to survey before returning");
+    //error_log($output);
 
     //print sprintf("\t %s",$output);
     //print "\n INFO: get_survery_link \n";
-    return $output;
+   // return $output;
     
 
 }

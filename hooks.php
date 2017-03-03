@@ -72,26 +72,14 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
             if(LogicTester::isValid($logic)) {
                 if(LogicTester::apply($logic, $record_data[$record])) {
                     // Is a trigger field being used?
-                  if($notification['is_survey_link']== 'yes'){ 
-                        
-                        error_log("before adding link to survey_link variable");
-                        error_log($notification['survey_link']);                 
+                  if($notification['is_survey_link']== 'yes'){                  
 
-                        $notification['survey_link']= generate_survey_link($notification['project_token'],$notification['survey_instrument'],$record,$conn);
-                        // error_log("Here is the survey_link");
-                        // error_log($notification['survey_link']);
-                        
-                         $api_url='http://bmidev1.kumc.edu/redcap/api/';
-                         $api_token = $notification['project_token'];
-
-                         list($success, $error_msg) = save_redcap_data(
-                                                        $api_url,
-                                                        $api_token,
-                                                        $notification['survey_link']
-                                                        );
-
-                         error_log("notifications after adding link");
-                         error_log($notification['survey_link']);
+                        $s_link = generate_survey_link($notification['project_token'],$notification['survey_instrument'],$record,$conn);
+                        error_log("notifications after adding link");
+                        error_log($s_link);
+                        error_log("here is the record field where the link should be saved");
+                        error_log($notification['survey_link_field_rec']);
+                        save_link_in_record($record,$CONFIG,$notification['project_token'],$s_link,$notification['survey_link_field_rec']);
                    }
 
                     if($notification['trigger_field']) {
@@ -193,6 +181,42 @@ function generate_survey_link($token,$instrument,$record,$conn){
     
 
 }
+
+
+
+// function to save the generated link in the record field.
+
+function save_link_in_record($record,$CONFIG,$api_token,$s_link,$rec_field){
+
+  error_log("inside save_link_in_record");
+  error_log($api_token);
+  error_log($s_link);
+  error_log($rec_field);
+  error_log($CONFIG['api_url']);
+
+
+   $link_val = array(array(
+        'record' => $record,
+        'field_name' => $rec_field,
+        'value' => $s_link
+    ));
+    list($success, $error_msg) = save_redcap_data(
+        $CONFIG['api_url'],
+        $api_token,
+        $link_val
+    );
+    
+    if(!$success) {
+        error_log('Failed in saving the link to the record field: '.$error_msg);
+        return false;
+    }
+
+    return true;
+
+
+}
+
+
 
 /**
  * Given a field name or REDCap piping label, get the respective record value.

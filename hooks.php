@@ -74,12 +74,15 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
                     // Is a trigger field being used?
                   if($notification['is_survey_link']== 'yes'){                  
                         error_log("What is happening?");
-                        $s_link = generate_survey_link($notification['project_token'],$notification['survey_instrument'],$record,$CONFIG);
+                       // $s_link = generate_survey_link($notification['project_token'],$notification['survey_instrument'],$record,$CONFIG);
+                        $s_link = REDCap::getSurveyLink($record,$notification['survey_instrument']);
                         error_log("notifications after adding link");
                         error_log($s_link);
-                        error_log("here is the record field where the link should be saved");
-                        error_log($notification['survey_link_field_rec']);
-                        save_link_in_record($record,$CONFIG,$notification['project_token'],$s_link,$notification['survey_link_field_rec']);
+                        //error_log("here is the record field where the link should be saved");
+                       // error_log($notification['survey_link_field_rec']);
+                       $record_data['SURVEYLINK']= $s_link;
+                       error_log($record_data['SURVEYLINK']);
+                       // save_link_in_record($record,$CONFIG,$notification['project_token'],$s_link,$notification['survey_link_field_rec']);
                    }
 
                     if($notification['trigger_field']) {

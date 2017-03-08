@@ -20,6 +20,8 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     error_log($instrument);
     error_log("record");
     error_log($record);
+    error_log("event_id");
+    error_log($event_id);
 
     global $conn; // REDCapism
     require_once(REDCAP_ROOT.'redcap_connect.php');
@@ -54,10 +56,13 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 
     // Get and format submitted record data.
     $record_data = Records::getData('array', $record);
-    //error_log("record_data object has");
-    //error_log($record_data);
-    //error_log("Inside record_data");
-    //error_log(print_r($record_data, TRUE));
+   
+   
+   error_log("Inside record_data");
+   error_log(print_r($record_data, true));
+ // error_log("**********************************ENTERED NOTIFICATION FUNCTION*****************************");
+
+  // error_log(print_r($record_data[$record], true));  
 
     // Iterate over associated notifications.
     foreach($notifications as $notification) {
@@ -88,10 +93,23 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
                        //error_log($res_data['email']);
                         //error_log("link inside record_data");
                        //error_log($record_data['SURVEYLINK']);
-                       save_link_in_record($record,$CONFIG,$notification['project_token'],$s_link,$notification['survey_link_field_rec']);
-                       error_log("after saving link in record_field");
+                       save_link_in_record(
+					   $record,
+					   $CONFIG,
+					   $notification['project_token'],
+					   $s_link,
+					   $notification['survey_link_field_rec']);
+                       
+        	       error_log("after saving link in record_field");
                        error_log($record_data[$notification['survey_link_field_rec']]);
-                       get_and_save_emails($record, $CONFIG, $notification, $conn);
+                       
+                       get_and_save_emails(
+					   $record,
+					   $CONFIG,
+					   $notification,
+					   $record_data,
+					   $event_id, 
+					   $conn);
 
                    }
 
@@ -143,144 +161,61 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 }
 //Function to generate survey links
 
-function generate_survey_link($token,$instrument,$record,$CONFIG){
-
-   require_once(dirname(__FILE__).'/utils/RestCallRequest.php');
-
-    /**
-    Input:
-            token:        string : It is API tBased on token, it will find out pid
-            instrument:   string
-            record:       string
-    Output:
-            url           string
-    **/
-    error_log("using api***********************************************************");
-    error_log("Inside Generate survey link function");
-    error_log("token value");
-    error_log($token);
-    error_log("instrument");
-    error_log($instrument);
-    error_log("record");
-    error_log(print_r($record, TRUE));
-
-//    require_once(dirname(__FILE__).'/RestCallRequest.php');
-
-   // $base_api_url='http://bmidev1.kumc.edu/redcap/api/';
-   // $ch = curl_init();
-   // curl_setopt($ch, CURLOPT_URL, $base_api_url);
-   // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
-   // curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-   // curl_setopt($ch, CURLOPT_VERBOSE, 0);
-   // curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-   // curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-   // curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
-   // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-   // curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
-    //print "\n DEBUG: get_survery_link \n";
-
-    $data = array(
-    'token' => $token,
-    'content' => 'surveyLink',
-    'format' => 'json',
-    'instrument' => $instrument,
-    'event' => '',
-    'record' => $record,
-    'returnFormat' => 'json'
-    );
-    
-   $api_request = new RestCallRequest(
-        $CONFIG['api_url'],
-        'POST',
-        array(
-            'content'   => 'record',
-            'type'      => 'eav',
-            'format'    => 'json',
-            'token'     => $token,
-            'data'      => json_encode($data)
-        )
-    );
-
-    $api_request->execute();
-    $response_info = $api_request->getResponseInfo();
-    $error_msg = '';
-    if($response_info['http_code'] == 200) {
-        $api_response = json_decode($api_request->getResponseBody(), true);
-        print_r($api_response, TRUE);
-        $output = $api_response;
-        error_log(print_r($output, TRUE));
-        error_log("link to survey from api_post above");
-        return $output;
-    } else {
-        $error_msg = (isset($api_response['error']) ? $api_response['error'] : 'No error returned.');
-        return array(false, $error_msg);
-    }
-   
-    
-    //curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
-   // $output = curl_exec($ch);
-    
-    //error_log("link to survey before returning");
-    //error_log($output);
-
-    //print sprintf("\t %s",$output);
-    //print "\n INFO: get_survery_link \n";
-   // return $output;
-    
-
-}
 // function that is specific to Resident evaluation project that gets the email addresses and saves in other instrument 
-function get_and_save_emails($record, $CONFIG, $notification, $conn){
+function get_and_save_emails($record, $CONFIG, $notification, $record_data,$event_id, $conn){
 
 
 // Code for faculty evaluation
 
 
-      error_log("_________entered get and save email function ______");
+      error_log("%%%%%%%%%%%%%%%%%%%% entered get and save email function %%%%%%%%%%%%%%%%%%%%%");
 
       if ($notification['name']== "Faculty Evaluation by Resident (testing)"){
+    
+          error_log("inside fac eval by res");
+        // error_log("printing record_data again");
+         //error_log(print_r($record_data, true));
 
-         error_log($record_data['resident_kumc']);
-         error_log($record_data['resident_amc']);
+         error_log("here is digging into record_data");
+              
+    	 $res_insts = array($record_data[$record][$event_id]['resident_kumc'],$record_data[$record][$event_id]['resident_amc'],$record_data[$record][$event_id]['resident_slu'],$record_data[$record][$event_id]['resident_evms'],$record_data[$record][$event_id]['resident_wu'],$record_data[$record][$event_id]['resident_uwm']);
 
 
-       
-    	  $res_insts = array($record_data['resident_kumc'],$record_data['resident_amc'],$record_data['resident_slu'],$record_data['resident_evms'],$record_data['resident_wu'],$record_data['resident_uwm']);
-          error_log(print_r($res_insts));
-
-      	  foreach ($res_insts as $res_inst) {
-       
-
-         //  error_log($res_inst[0]);
-           //	  if($res_inst !== null){
-            
-            //      $rec_num = $res_inst;
-  	   
-          	// }
-     
-
-          }
+          $rec_num = max($res_insts);
       
-       error_log("The resident record number is");
-       error_log($rec_num);
-
-       $res_data =  get_record_data(rec_num, 181, $conn);
-                      // error_log("is res_data for record 12 is retrieving");
-                       //error_log($res_data['email']);
-
-       $rec_label = "resident_email";
-       save_link_in_record($record,$CONFIG,$notification['project_token'],$res_data['email'],$rec_label);
+          error_log("The resident record number is");
+          error_log($rec_num);
+       // here we are passing the project from which the record data should be fetched. Since for resident information is in 181, it is passed directly
+          $res_data =  get_record_data($rec_num, 181, $conn);
+          $rec_label = "resident_email";        
+          save_link_in_record($record,$CONFIG,$notification['project_token'],$res_data['email'],$rec_label);
 
 
     }
 
-      // if ($notification['name']== "Resident Evaluation by Faculty (testing)"){
+       if ($notification['name']== "Resident Evaluation by Faculty (testing)"){
 
 
 
-       //}
+        error_log("inside res eval by fac");
+        // error_log("printing record_data again");
+         //error_log(print_r($record_data, true));
+
+         error_log("here is digging into record_data");
+
+         $eval_insts = array($record_data[$record][$event_id]['evaluator_kumc'],$record_data[$record][$event_id]['evaluator_amc'],$record_data[$record][$event_id]['evaluator_slu'],$record_data[$record][$event_id]['evaluator_evms'],$record_data[$record][$event_id]['evaluator_wu'],$record_data[$record][$event_id]['evaluator_uwm']);
+
+
+          $rec_num_eval = max($eval_insts);
+
+          error_log("The evaluator record number is");
+          error_log($rec_num_eval);
+       // here we are passing the project from which the record data should be fetched. Since for resident information is in 181, it is passed directly
+          $eval_data =  get_record_data($rec_num_eval, 182, $conn);
+          $rec_label_fac = "faculty_email";
+          save_link_in_record($record,$CONFIG,$notification['project_token'],$eval_data['email'],$rec_label_fac);
+    }
 }
-
 // function to save the generated link in the record field.
 
 function save_link_in_record($record,$CONFIG,$api_token,$s_link,$rec_field){
@@ -332,9 +267,9 @@ function get_field_value($label, $record, $event_id, $record_data) {
         $label = '['.$label.']';
     } 
 
-    error_log("inside get field val fun");
-    error_log("value of label");
-    error_log($label);
+    //error_log("inside get field val fun");
+   // error_log("value of label");
+    //error_log($label);
 
     $testpipe =  Piping::replaceVariablesInLabel(
         $label,
@@ -346,8 +281,8 @@ function get_field_value($label, $record, $event_id, $record_data) {
         false
     );
 
-    error_log("value inside above label");
-    error_log($testpipe);
+    //error_log("value inside above label");
+    //error_log($testpipe);
 
     return $testpipe;
 }
@@ -361,8 +296,8 @@ function replace_labels_with_values($text, $record, $event_id, $record_data) {
     $pattern = '\[[0-9a-z_]*]\[[0-9a-z_]*]|\[[0-9a-z_]*]';
     preg_match_all('/'.$pattern.'/U', $text, $matches);
     $matches = array_unique($matches);
-    error_log("inside replace labels function ");
-    error_log(print_r($matches, true));
+    //error_log("inside replace labels function ");
+    //error_log(print_r($matches, true));
      foreach($matches[0] as $match) {
         $text = str_replace(
             $match, 

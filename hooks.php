@@ -13,7 +13,7 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 {
     // Provides access to REDCap helper functions and database connection.
     print "hello";
-    error_log("hello");
+    error_log("**********************************ENTERED NOTIFICATION FUNCTION*****************************");
     error_log("project id");
     error_log($project_id);
     error_log("instrument");
@@ -40,8 +40,8 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
         $CONFIG['notifications_pid'],
         $conn
     );
-    error_log("notifications object has");
-    error_log(print_r($notifications, TRUE));
+    //error_log("notifications object has");
+    //error_log(print_r($notifications, TRUE));
 
 
     // Return if no notifications found
@@ -54,10 +54,10 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 
     // Get and format submitted record data.
     $record_data = Records::getData('array', $record);
-    error_log("record_data object has");
-    error_log($record_data);
-    error_log("Inside record_data");
-    error_log(print_r($record_data, TRUE));
+    //error_log("record_data object has");
+    //error_log($record_data);
+    //error_log("Inside record_data");
+    //error_log(print_r($record_data, TRUE));
 
     // Iterate over associated notifications.
     foreach($notifications as $notification) {
@@ -66,24 +66,35 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
         if($notification['notifications_complete'] == 2) {
 
             // Prepare notification logic.
-            $logic = prepare_logic($notification['logic'], $event_id);
+           $logic = prepare_logic($notification['logic'], $event_id);
 
             // Does the given record meet notification logic conditions.
             if(LogicTester::isValid($logic)) {
                 if(LogicTester::apply($logic, $record_data[$record])) {
                     // Is a trigger field being used?
                   if($notification['is_survey_link']== 'yes'){                  
-                        error_log("What is happening?");
+                        //error_log("What is happening?");
                        // $s_link = generate_survey_link($notification['project_token'],$notification['survey_instrument'],$record,$CONFIG);
                         $s_link = REDCap::getSurveyLink($record,$notification['survey_instrument']);
-                        error_log("notifications after adding link");
+                        error_log("link generated");
                         error_log($s_link);
                         //error_log("here is the record field where the link should be saved");
                        // error_log($notification['survey_link_field_rec']);
-                       $record_data['SURVEYLINK']= $s_link;
-                       error_log($record_data['SURVEYLINK']);
-                       // save_link_in_record($record,$CONFIG,$notification['project_token'],$s_link,$notification['survey_link_field_rec']);
+                       //$record_data['SURVEYLINK']= $s_link;
+                       //error_log("link inside record_data");
+                      // error_log($record_data['SURVEYLINK']);
+                      // $res_data =  get_record_data(12, 181, $conn);
+                      // error_log("is res_data for record 12 is retrieving");
+                       //error_log($res_data['email']);
+                        //error_log("link inside record_data");
+                       //error_log($record_data['SURVEYLINK']);
+                       save_link_in_record($record,$CONFIG,$notification['project_token'],$s_link,$notification['survey_link_field_rec']);
+                       error_log("after saving link in record_field");
+                       error_log($record_data[$notification['survey_link_field_rec']]);
+                       get_and_save_emails($record, $CONFIG, $notification, $conn);
+
                    }
+
 
                     if($notification['trigger_field']) {
                         $trigger_field = get_field_value(
@@ -218,8 +229,57 @@ function generate_survey_link($token,$instrument,$record,$CONFIG){
     
 
 }
+// function that is specific to Resident evaluation project that gets the email addresses and saves in other instrument 
+function get_and_save_emails($record, $CONFIG, $notification, $conn){
 
 
+// Code for faculty evaluation
+
+
+      error_log("_________entered get and save email function ______");
+
+      if ($notification['name']== "Faculty Evaluation by Resident (testing)"){
+
+         error_log($record_data['resident_kumc']);
+         error_log($record_data['resident_amc']);
+
+
+       
+    	  $res_insts = array($record_data['resident_kumc'],$record_data['resident_amc'],$record_data['resident_slu'],$record_data['resident_evms'],$record_data['resident_wu'],$record_data['resident_uwm']);
+          error_log(print_r($res_insts));
+
+      	  foreach ($res_insts as $res_inst) {
+       
+
+         //  error_log($res_inst[0]);
+           //	  if($res_inst !== null){
+            
+            //      $rec_num = $res_inst;
+  	   
+          	// }
+     
+
+          }
+      
+       error_log("The resident record number is");
+       error_log($rec_num);
+
+       $res_data =  get_record_data(rec_num, 181, $conn);
+                      // error_log("is res_data for record 12 is retrieving");
+                       //error_log($res_data['email']);
+
+       $rec_label = "resident_email";
+       save_link_in_record($record,$CONFIG,$notification['project_token'],$res_data['email'],$rec_label);
+
+
+    }
+
+      // if ($notification['name']== "Resident Evaluation by Faculty (testing)"){
+
+
+
+       //}
+}
 
 // function to save the generated link in the record field.
 
@@ -270,9 +330,13 @@ function get_field_value($label, $record, $event_id, $record_data) {
     // If field name is not flanked by blackets, add them.
     if(substr($label, 0, 1) != '[' or substr($label, -1) != ']') {
         $label = '['.$label.']';
-    }
+    } 
 
-    return  Piping::replaceVariablesInLabel(
+    error_log("inside get field val fun");
+    error_log("value of label");
+    error_log($label);
+
+    $testpipe =  Piping::replaceVariablesInLabel(
         $label,
         $record,
         $event_id,
@@ -281,6 +345,11 @@ function get_field_value($label, $record, $event_id, $record_data) {
         null,
         false
     );
+
+    error_log("value inside above label");
+    error_log($testpipe);
+
+    return $testpipe;
 }
 
 
@@ -292,7 +361,9 @@ function replace_labels_with_values($text, $record, $event_id, $record_data) {
     $pattern = '\[[0-9a-z_]*]\[[0-9a-z_]*]|\[[0-9a-z_]*]';
     preg_match_all('/'.$pattern.'/U', $text, $matches);
     $matches = array_unique($matches);
-    foreach($matches[0] as $match) {
+    error_log("inside replace labels function ");
+    error_log(print_r($matches, true));
+     foreach($matches[0] as $match) {
         $text = str_replace(
             $match, 
             get_field_value($match, $record, $event_id, $record_data),

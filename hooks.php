@@ -93,7 +93,7 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
                        //error_log($res_data['email']);
                         //error_log("link inside record_data");
                        //error_log($record_data['SURVEYLINK']);
-                       save_link_in_record(
+                       save_value_in_record(
 					   $record,
 					   $CONFIG,
 					   $notification['project_token'],
@@ -178,7 +178,12 @@ function get_and_save_emails($record, $CONFIG, $notification, $record_data,$even
 
          error_log("here is digging into record_data");
               
-    	 $res_insts = array($record_data[$record][$event_id]['resident_kumc'],$record_data[$record][$event_id]['resident_amc'],$record_data[$record][$event_id]['resident_slu'],$record_data[$record][$event_id]['resident_evms'],$record_data[$record][$event_id]['resident_wu'],$record_data[$record][$event_id]['resident_uwm']);
+    	 $res_insts = array($record_data[$record][$event_id]['resident_kumc'],
+                            $record_data[$record][$event_id]['resident_amc'],
+                            $record_data[$record][$event_id]['resident_slu'],
+                            $record_data[$record][$event_id]['resident_evms'],
+                            $record_data[$record][$event_id]['resident_wu'],
+                            $record_data[$record][$event_id]['resident_uwm']);
 
 
           $rec_num = max($res_insts);
@@ -188,7 +193,10 @@ function get_and_save_emails($record, $CONFIG, $notification, $record_data,$even
        // here we are passing the project from which the record data should be fetched. Since for resident information is in 181, it is passed directly
           $res_data =  get_record_data($rec_num, 181, $conn);
           $rec_label = "resident_email";        
-          save_link_in_record($record,$CONFIG,$notification['project_token'],$res_data['email'],$rec_label);
+          save_value_in_record($record,
+                              $CONFIG,
+			      $notification['project_token'],
+			      $res_data['email'],$rec_label);
 
 
     }
@@ -203,7 +211,12 @@ function get_and_save_emails($record, $CONFIG, $notification, $record_data,$even
 
          error_log("here is digging into record_data");
 
-         $eval_insts = array($record_data[$record][$event_id]['evaluator_kumc'],$record_data[$record][$event_id]['evaluator_amc'],$record_data[$record][$event_id]['evaluator_slu'],$record_data[$record][$event_id]['evaluator_evms'],$record_data[$record][$event_id]['evaluator_wu'],$record_data[$record][$event_id]['evaluator_uwm']);
+         $eval_insts = array($record_data[$record][$event_id]['evaluator_kumc'],
+			     $record_data[$record][$event_id]['evaluator_amc'],
+			     $record_data[$record][$event_id]['evaluator_slu'],
+			     $record_data[$record][$event_id]['evaluator_evms'],
+			     $record_data[$record][$event_id]['evaluator_wu'],
+                             $record_data[$record][$event_id]['evaluator_uwm']);
 
 
           $rec_num_eval = max($eval_insts);
@@ -213,29 +226,33 @@ function get_and_save_emails($record, $CONFIG, $notification, $record_data,$even
        // here we are passing the project from which the record data should be fetched. Since for resident information is in 181, it is passed directly
           $eval_data =  get_record_data($rec_num_eval, 182, $conn);
           $rec_label_fac = "faculty_email";
-          save_link_in_record($record,$CONFIG,$notification['project_token'],$eval_data['email'],$rec_label_fac);
+          save_value_in_record($record,
+			      $CONFIG,
+			      $notification['project_token'],
+                              $eval_data['email'],
+		              $rec_label_fac);
     }
 }
 // function to save the generated link in the record field.
 
-function save_link_in_record($record,$CONFIG,$api_token,$s_link,$rec_field){
+function save_value_in_record($record,$CONFIG,$api_token,$rec_value,$rec_field){
 
   error_log("inside save_link_in_record");
   error_log($api_token);
-  error_log($s_link);
+  error_log($rec_value);
   error_log($rec_field);
   error_log($CONFIG['api_url']);
 
 
-   $link_val = array(array(
+   $field_val = array(array(
         'record' => $record,
         'field_name' => $rec_field,
-        'value' => $s_link
+        'value' => $rec_value
     ));
     list($success, $error_msg) = save_redcap_data(
         $CONFIG['api_url'],
         $api_token,
-        $link_val
+        $field_val
     );
     
     if(!$success) {

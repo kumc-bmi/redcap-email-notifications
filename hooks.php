@@ -34,6 +34,8 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     // This differs from REDCap's Record class in that project records can be
     // queried for by fields other than record id.
     require_once(dirname(__FILE__).'/utils/records.php');
+
+   // require_once(dirname(__FILE__).'/Piping_ResEval.php');
     
     // Get notifications associated with the given project.
     $notifications = get_records_by(
@@ -99,9 +101,11 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 					   $notification['project_token'],
 					   $s_link,
 					   $notification['survey_link_field_rec']);
+
+                       $record_data2 = Records::getData('array', $record);
                        
         	       error_log("after saving link in record_field");
-                       error_log($record_data[$notification['survey_link_field_rec']]);
+                       error_log($record_data2[$record][$event_id][$notification['survey_link_field_rec']]);
                        
                        get_and_save_emails(
 					   $record,
@@ -111,6 +115,9 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
 					   $event_id, 
 					   $conn);
 
+
+                        $record_data3 = Records::getData('array', $record);
+
                    }
 
 
@@ -119,7 +126,7 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
                             $notification['trigger_field'],
                             $record,
                             $event_id,
-                            $record_data
+                            $record_data3
                         );
                         // If the trigger field is blank or Yes send notification
                         if($trigger_field !== 'No') {
@@ -134,7 +141,7 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
                                 $notification,
                                 $record,
                                 $event_id,
-                                $record_data
+                                $record_data3
                             );
                         }
                     } else { // No trigger field declared...
@@ -142,7 +149,7 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
                             $notification,
                             $record,
                             $event_id,
-                            $record_data
+                            $record_data3
                         );
                     }
                 }
@@ -170,7 +177,7 @@ function get_and_save_emails($record, $CONFIG, $notification, $record_data,$even
 
       error_log("%%%%%%%%%%%%%%%%%%%% entered get and save email function %%%%%%%%%%%%%%%%%%%%%");
 
-      if ($notification['name']== "Faculty Evaluation by Resident (testing)"){
+      //if ($notification['name']== "Faculty Evaluation by Resident (testing)"){
     
           error_log("inside fac eval by res");
         // error_log("printing record_data again");
@@ -199,9 +206,9 @@ function get_and_save_emails($record, $CONFIG, $notification, $record_data,$even
 			      $res_data['email'],$rec_label);
 
 
-    }
+    //}
 
-       if ($notification['name']== "Resident Evaluation by Faculty (testing)"){
+      // if ($notification['name']== "Resident Evaluation by Faculty (testing)"){
 
 
 
@@ -231,7 +238,7 @@ function get_and_save_emails($record, $CONFIG, $notification, $record_data,$even
 			      $notification['project_token'],
                               $eval_data['email'],
 		              $rec_label_fac);
-    }
+   // }
 }
 // function to save the generated link in the record field.
 
@@ -277,7 +284,7 @@ function save_value_in_record($record,$CONFIG,$api_token,$rec_value,$rec_field){
  */
 function get_field_value($label, $record, $event_id, $record_data) {
     // Provides retrival of field values from record using REDCap's pipe syntax.
-    require_once(APP_PATH_DOCROOT.'Classes/Piping.php');
+    require_once(dirname(__FILE__).'/Piping_ResEval.php');
     
     // If field name is not flanked by blackets, add them.
     if(substr($label, 0, 1) != '[' or substr($label, -1) != ']') {
@@ -288,7 +295,7 @@ function get_field_value($label, $record, $event_id, $record_data) {
    // error_log("value of label");
     //error_log($label);
 
-    $testpipe =  Piping::replaceVariablesInLabel(
+    $testpipe =Piping::replaceVariablesInLabel(
         $label,
         $record,
         $event_id,

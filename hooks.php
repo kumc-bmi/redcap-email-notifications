@@ -21,6 +21,7 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     // Load configuration plugin configuration.
     define('FRAMEWORK_ROOT', REDCAP_ROOT.'plugins/framework/');
     require_once(FRAMEWORK_ROOT.'/PluginConfig.php');
+    require_once(dirname(__FILE__).'/../utils/records.php');
     $CONFIG = new PluginConfig(dirname(__FILE__).'/notifications.ini');
 
     $notifications = get_records_by(
@@ -120,8 +121,8 @@ function get_field_value($label, $record, $event_id, $record_data) {
     } 
 
     //error_log("inside get field val fun");
-    error_log("record_data before entering the piping");
-    error_log(print_r($record_data, TRUE));
+   // error_log("record_data before entering the piping");
+   // error_log(print_r($record_data, TRUE));
 
     return Piping::replaceVariablesInLabel(
         $label,
@@ -145,8 +146,8 @@ function replace_labels_with_values($text, $record, $event_id, $record_data) {
     $pattern = '\[[0-9a-z_]*]\[[0-9a-z_]*]|\[[0-9a-z_]*]';
     preg_match_all('/'.$pattern.'/U', $text, $matches);
     $matches = array_unique($matches);
-    error_log("inside replace labels function ");
-    error_log(print_r($matches, true));
+   // error_log("inside replace labels function ");
+   // error_log(print_r($matches, true));
      foreach($matches[0] as $match) {
         $text = str_replace(
             $match, 
@@ -189,7 +190,7 @@ function reset_trigger_field($record, $event_id, $trigger_field, $api_url,
     $trigger_reset = array(array(
         'record' => $record,
         'field_name' => $trigger_field,
-        'value' => 0
+        'value' => 1
     ));
 
     if(REDCap::isLongitudinal()) {
@@ -220,9 +221,9 @@ function reset_trigger_field($record, $event_id, $trigger_field, $api_url,
  */
 function send_notification($notification, $record, $event_id, $record_data) {
     
- error_log("inside send notification function: record_data[--surveylink--]");
+// error_log("inside send notification function: record_data[--surveylink--]");
 
- error_log($record_data[$record][$event_id]['SURVEYLINK']);
+ //error_log($record_data[$record][$event_id]['SURVEYLINK']);
 
 
 

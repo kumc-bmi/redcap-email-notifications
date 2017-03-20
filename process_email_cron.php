@@ -10,19 +10,20 @@
 
 // Provides access to REDCap helper functions and database connection.
   
-function run_notification_cron(){
+//function run_notification_cron(){
   
 	error_log("**********************************ENTERED RESEVAL CRON FUNCTION *****************************");
 	global $conn; // REDCapism
-	require_once(REDCAP_ROOT.'redcap_connect.php');
+        define('REDCAP_ROOT', '/srv/www/htdocs-insecure/redcap/');
 
-	// Load configuration plugin configuration.
+	//require_once(REDCAP_ROOT.'redcap_connect.php');
+        // Load configuration plugin configuration.
 	define('FRAMEWORK_ROOT', REDCAP_ROOT.'plugins/framework/');
 	require_once(FRAMEWORK_ROOT.'/PluginConfig.php');
-	require_once(dirname(__FILE__).'/../utils/records.php');
-	require_once(dirname(__FILE__).'/process_notify.php');
+	require_once(REDCAP_ROOT.'plugins/notifications-git/utils/records.php');
+	require_once(REDCAP_ROOT.'plugins/notifications-git/process_notify.php');
 	$CONFIG = new PluginConfig(dirname(__FILE__).'/notifications.ini');
-	require_once(APP_PATH_DOCROOT.'Classes/Records.php');
+	require_once(REDCAP_ROOT.'redcap_v6.11.5/Classes/Records.php');
 
 	// Connect to DB
 	$db_conn_file = dirname(__FILE__) . '/database.php';
@@ -38,7 +39,10 @@ function run_notification_cron(){
 	if (!$conn)
 	{
         	exit("The hostname ($hostname) / username ($username) / password (XXXXXX) combination in your database connection file [$db_conn_file] could not connect to the server. Please check their values.");		}	
-	if (!mysql_select_db($db,$conn))
+      
+        $db_selected  = mysql_select_db($db,$conn);
+
+	if (!$db_selected)
 	{
         	exit("The hostname ($hostname) / database ($db) / username ($username) / password (XXXXXX) combination in your database connection file [$db_conn_file] could not connect to the server.");
 	}
@@ -47,25 +51,34 @@ function run_notification_cron(){
 
         // gives all the project ids that have temporal notifications set
 
-	$result = mysql_query("select b.temporal_projects from (select record,value as 'type' from redcap.redcap_data where project_id = 155 and field_name = 'type' and value = '1') a
+	$result = mysql_query("select distinct b.temporal_projects from (select record,value as 'type' from redcap.redcap_data where project_id = 155 and field_name = 'type' and value = '1') a
 			       join (select record,value as 'temporal_projects' from redcap.redcap_data where project_id = 155 and field_name = 'project_id') b on b.record = a.record");
 
-	$project_ids = array();
+//	print_r($result);
+
+        $project_ids = array();
 
 	while ($row = mysql_fetch_array($result))
-	{
-        	array_push($project_ids, $row);
+	{    
+               // print_r($row);
+                foreach ($row as $index => $proj ){
+	        	array_push($project_ids, $proj);
+               }
 	}
-
-	foreach($project_ids as $proj_id){
-
+        
+        print_r ($project_ids);
+	 
+        foreach($project_ids as $key => $proj_id){
+		
+		print_r($proj_id);
+         
     		$notifications = get_records_by(
                 	            'project_id',
                         	    $proj_id,
                             	    $CONFIG['notifications_pid'],
                             	    $conn
         	         	 );
-
+                print_r($notifications);
     		foreach($notifications as $notification) {
 
         		// checking temporal
@@ -90,7 +103,7 @@ function run_notification_cron(){
 
 	}	
 
-}
+//}
 
 ?>
 

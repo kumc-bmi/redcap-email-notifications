@@ -25,14 +25,16 @@ function run_notification_cron(){
 	require_once(APP_PATH_DOCROOT.'Classes/Records.php');
 
 	// Connect to DB
-	//$db_conn_file = dirname(__FILE__) . '/database.php';
+	$db_conn_file = dirname(__FILE__) . '/database.php';
 
-	//include ($db_conn_file);
-	//if (!isset($hostname) || !isset($db) || !isset($username) || !isset($password))
-//	{
-  //      	exit("There is not a valid hostname ($hostname) / database ($db) / username ($username) / password (XXXXXX) combination in your database connection file [$db_conn_file].");
-//	}
-	$conn = mysql_connect($bmidev1,$n136k793,$Test@2016);
+	include ($db_conn_file);
+	if (!isset($hostname) || !isset($db) || !isset($username) || !isset($password))
+	{
+      	exit("There is not a valid hostname ($hostname) / database ($db) / username ($username) / password (XXXXXX) combination in your database connection file [$db_conn_file].");
+	}
+	
+	$conn = mysql_connect($hostname,$username, $password);
+	
 	if (!$conn)
 	{
         	exit("The hostname ($hostname) / username ($username) / password (XXXXXX) combination in your database connection file [$db_conn_file] could not connect to the server. Please check their values.");		}	

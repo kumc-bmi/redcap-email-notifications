@@ -19,12 +19,13 @@ function notifications_save_record($project_id, $record, $instrument, $event_id,
     require_once(REDCAP_ROOT.'redcap_connect.php');
 
     // Load configuration plugin configuration.
-    define('FRAMEWORK_ROOT', REDCAP_ROOT.'plugins/framework/');
-    require_once(FRAMEWORK_ROOT.'/PluginConfig.php');
-    require_once(dirname(__FILE__).'/../utils/records.php');
-    require_once(dirname(__FILE__).'/process_notify.php');
+    //define('FRAMEWORK_ROOT', REDCAP_ROOT.'plugins/framework/');
+    define('NOTIFICATIONS_ROOT', REDCAP_ROOT.'plugins/notifications-git/'); 
+    //require_once(FRAMEWORK_ROOT.'/PluginConfig.php');
+    require_once(NOTIFICATIONS_ROOT.'utils/records.php');
+    require_once(NOTIFICATIONS_ROOT.'process_notify.php');
 
-    $CONFIG = new PluginConfig(dirname(__FILE__).'/notifications.ini');
+    $CONFIG = new PluginConfig(NOTIFICATIONS_ROOT.'notifications.ini');
 
     $notifications = get_records_by(
         'project_id',

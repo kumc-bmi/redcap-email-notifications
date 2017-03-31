@@ -1,13 +1,19 @@
 <?php
+/**
+ * This is an implementation of the process_notification function which is invoked 
+ * either by notifications_save_record or process_email_cron for processing the 
+ * email request and send out the email notifications.
+ */
 
-function process_notification($notification,$event_id, $record_data, $record){
-    
-    error_log("################################## ENTERED pROCESS_NOTIFICATION ##################################################");
 
+function process_notification($notification,$event_id, $record_data, $record)
+{
 
-
+     // Evaluates REDCap branching logic syntax.
     require_once(APP_PATH_DOCROOT.'Classes/LogicTester.php');
+    // Load environment dependent variables.
     $CONFIG = new PluginConfig(dirname(__FILE__).'/notifications.ini');
+    // Prepare notification logic.
     $logic = prepare_logic($notification['logic'], $event_id);
 
     // Does the given record meet notification logic conditions.
@@ -21,10 +27,6 @@ function process_notification($notification,$event_id, $record_data, $record){
                     $event_id,
                     $record_data
                 );
-             error_log($notification['trigger_field']);
-             error_log("trigger field value");
-             error_log($trigger_field);
-
               // If the trigger field is blank or Yes send notification
                 if($trigger_field !== 'No') {
                     reset_trigger_field(

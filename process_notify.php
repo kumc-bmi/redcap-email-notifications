@@ -6,28 +6,28 @@
  */
 
 
-function process_notification($notification,$event_id, $record_data, $record)
+function process_notification($notification,$event_id, $record_data, 
+                              $record,$CONFIG)
 {
 
      // Evaluates REDCap branching logic syntax.
     require_once(APP_PATH_DOCROOT.'Classes/LogicTester.php');
-    // Load environment dependent variables.
-    $CONFIG = new PluginConfig(dirname(__FILE__).'/notifications.ini');
+       
     // Prepare notification logic.
     $logic = prepare_logic($notification['logic'], $event_id);
-
+    
     // Does the given record meet notification logic conditions.
     if(LogicTester::isValid($logic)) {
         if(LogicTester::apply($logic, $record_data[$record])) {
-            // Is a trigger field being used?
-          if($notification['trigger_field']) {
+             // Is a trigger field being used?
+            if($notification['trigger_field']) {
                 $trigger_field = get_field_value(
                     $notification['trigger_field'],
                     $record,
                     $event_id,
                     $record_data
                 );
-              // If the trigger field is blank or Yes send notification
+                // If the trigger field is blank or Yes send notification
                 if($trigger_field !== 'No') {
                     reset_trigger_field(
                         $record,
@@ -35,7 +35,7 @@ function process_notification($notification,$event_id, $record_data, $record)
                         $notification['trigger_field'],
                         $CONFIG['api_url'],
                         $notification['project_token']
-                    );
+                     );
                     send_notification(
                         $notification,
                         $record,
@@ -49,9 +49,9 @@ function process_notification($notification,$event_id, $record_data, $record)
                     $record,
                     $event_id,
                     $record_data
-                );
-            }
-        }
+                 );
+             }
+         }
     } else {
         // Log that notification logic is invalid.
         error_log(
@@ -61,7 +61,7 @@ function process_notification($notification,$event_id, $record_data, $record)
             .'originating from action on '
             .'(pid:'.$project_id.'; rid:'.$record.')'
         );
-    }
+     }
 }
 
 /**
@@ -76,15 +76,14 @@ function process_notification($notification,$event_id, $record_data, $record)
 
 function get_field_value($label, $record, $event_id, $record_data) {
     // Provides retrival of field values from record using REDCap's pipe syntax.
-   
-   require_once(APP_PATH_DOCROOT.'Classes/Piping.php');    
-
-
-    // If field name is not flanked by blackets, add them.
+    
+    require_once(APP_PATH_DOCROOT.'Classes/Piping.php');    
+    
+     // If field name is not flanked by blackets, add them.
     if(substr($label, 0, 1) != '[' or substr($label, -1) != ']') {
         $label = '['.$label.']';
     } 
-
+    
     return Piping::replaceVariablesInLabel(
         $label,
         $record,
@@ -94,8 +93,8 @@ function get_field_value($label, $record, $event_id, $record_data) {
         null,
         false
     );
-
-   
+    
+    
 }
 
 /**
@@ -106,7 +105,7 @@ function replace_labels_with_values($text, $record, $event_id, $record_data) {
     $pattern = '\[[0-9a-z_]*]\[[0-9a-z_]*]|\[[0-9a-z_]*]';
     preg_match_all('/'.$pattern.'/U', $text, $matches);
     $matches = array_unique($matches);
-     foreach($matches[0] as $match) {
+    foreach($matches[0] as $match) {
         $text = str_replace(
             $match, 
             get_field_value($match, $record, $event_id, $record_data),
@@ -125,7 +124,7 @@ function prepare_logic($logic, $event_id) {
     if(REDCap::isLongitudinal()) {
         // Provides Event based helper functions.
         require_once(APP_PATH_DOCROOT.'Classes/Event.php');
-
+        
         // Returns event eames for the globally specified project :`(
         $event_names = REDCap::getEventNames(true);
         // If longitudinal, prepent event name
@@ -149,27 +148,27 @@ function reset_trigger_field($record, $event_id, $trigger_field, $api_url,
         'record' => $record,
         'field_name' => $trigger_field,
         'value' => 0
-    ));
+     ));
 
     if(REDCap::isLongitudinal()) {
         // Provides Event based helper functions.
         require_once(APP_PATH_DOCROOT.'Classes/Event.php');
-
+        
         $event_names = REDCap::getEventNames(true);
         $trigger_reset[0]['redcap_event_name'] = $event_names[$event_id];
     }
-
+    
     list($success, $error_msg) = save_redcap_data(
         $api_url,
         $api_token,
         $trigger_reset
     );
-
+    
     if(!$success) {
         error_log('Failed to reset notification trigger field: '.$error_msg);
         return false;
     }
-
+    
     return true;
 }
 
@@ -179,7 +178,7 @@ function reset_trigger_field($record, $event_id, $trigger_field, $api_url,
  */
 function send_notification($notification, $record, $event_id, $record_data) {
     
-if($notification['to_address_type'] == 'static') {
+    if($notification['to_address_type'] == 'static') {
         $to = $notification['static_to_address'];
     } else {
         $to = get_field_value(
@@ -208,7 +207,7 @@ if($notification['to_address_type'] == 'static') {
         $record_data
     );
     
-     $body = replace_labels_with_values(
+    $body = replace_labels_with_values(
         $notification['body'],
         $record,
         $event_id,
